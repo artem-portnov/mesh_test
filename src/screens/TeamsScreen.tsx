@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
     FlatList,
     StyleSheet,
@@ -6,30 +6,17 @@ import {
     Text,
     Image
 } from 'react-native';
-import { fetchTeams } from '../api/teams.ts';
-import { Team } from '../types';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '../store';
+import { loadTeams } from '../store/slices/teamsSlice.ts';
 
-const LIMIT = 10
 export default function TeamsScreen() {
-    const [teams, setTeams] = useState<Team[]>([]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch<AppDispatch>();
+    const { items, loading, error } = useSelector((state: RootState) => state.teams);
 
     useEffect(() => {
-        loadTeams()
-    }, []);
-
-
-    const loadTeams = async () => {
-        setLoading(true);
-        try {
-            const response = await fetchTeams({ limit: LIMIT, offset: 0 });
-            setTeams(response.teams);
-        } catch (err) {
-            console.error('Ошибка загрузки: ', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        dispatch(loadTeams())
+    }, [dispatch]);
 
     if (loading) {
         return (
@@ -39,10 +26,18 @@ export default function TeamsScreen() {
         );
     }
 
+    if (error) {
+        return (
+            <View style={styles.center}>
+                <Text>Ошибка: {error}</Text>
+            </View>
+        );
+    }
+
     return (
         <View style={styles.container}>
             <FlatList
-                data={teams}
+                data={items}
                 renderItem={({item}) => (
                     <View style={styles.item}>
                         <Image source={{uri: item.crest}} style={styles.logo} resizeMode="contain"/>

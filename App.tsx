@@ -7,7 +7,9 @@
 
 import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Provider } from 'react-redux';
 import RootNavigator from './src/navigation';
+import { store } from './src/store';
 
 function App() {
     const isDarkMode = useColorScheme() === 'dark';
@@ -15,9 +17,11 @@ function App() {
     return (
         <SafeAreaProvider>
             <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'}/>
-            <View style={styles.container}>
-                <RootNavigator/>
-            </View>
+            <Provider store={store}>
+                <View style={styles.container}>
+                    <RootNavigator/>
+                </View>
+            </Provider>
         </SafeAreaProvider>
     );
 }
