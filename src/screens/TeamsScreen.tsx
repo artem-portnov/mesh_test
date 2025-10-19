@@ -6,41 +6,30 @@ import {
     Text,
     Image
 } from 'react-native';
+import { fetchTeams } from '../api/teams.ts';
+import { Team } from '../types';
 
-type Team = {
-    id: number;
-    name: string;
-    crest: string
-};
-
+const LIMIT = 10
 export default function TeamsScreen() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const mockTeams: Team[] = [
-            {
-                id: 1,
-                name: 'VfL Wolfsburg',
-                crest: 'https://crests.football-data.org/11.png',
-            },
-            {
-                id: 2,
-                name: 'SV Werder Bremen',
-                crest: 'https://crests.football-data.org/12.png',
-            },
-            {
-                id: 3,
-                name: '1. FC Kaiserslautern',
-                crest: 'https://crests.football-data.org/13.png',
-            }
-        ];
-
-        setTimeout(() => {
-            setTeams(mockTeams);
-            setLoading(false);
-        }, 1000);
+        loadTeams()
     }, []);
+
+
+    const loadTeams = async () => {
+        setLoading(true);
+        try {
+            const response = await fetchTeams({ limit: LIMIT, offset: 0 });
+            setTeams(response.teams);
+        } catch (err) {
+            console.error('Ошибка загрузки: ', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (loading) {
         return (
