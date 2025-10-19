@@ -4,7 +4,8 @@ import {
     StyleSheet,
     View,
     Text,
-    Image
+    Image,
+    TouchableOpacity
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
@@ -12,11 +13,23 @@ import { loadTeams } from '../store/slices/teamsSlice.ts';
 
 export default function TeamsScreen() {
     const dispatch = useDispatch<AppDispatch>();
-    const { items, loading, error } = useSelector((state: RootState) => state.teams);
+    const {items, loading, error, offset, limit, hasNext, hasPrev} = useSelector((state: RootState) => state.teams);
 
     useEffect(() => {
-        dispatch(loadTeams())
-    }, [dispatch]);
+        dispatch(loadTeams(offset));
+    }, [dispatch, offset]);
+
+    const handleNext = () => {
+        if (hasNext) {
+            dispatch(loadTeams(offset + limit));
+        }
+    };
+
+    const handlePrev = () => {
+        if (hasPrev) {
+            dispatch(loadTeams(offset - limit));
+        }
+    };
 
     if (loading) {
         return (
@@ -46,6 +59,27 @@ export default function TeamsScreen() {
                 )}
                 keyExtractor={(item) => item.id.toString()}
             />
+            <View style={styles.pagination}>
+                <TouchableOpacity
+                    style={[styles.paginationButton, !hasPrev && styles.paginationButtonDisabled]}
+                    onPress={handlePrev}
+                    disabled={!hasPrev}
+                >
+                    <Text style={styles.paginationButtonText}>Назад</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.pageInfo}>
+                    Страница {Math.floor(offset / limit) + 1}
+                </Text>
+
+                <TouchableOpacity
+                    style={[styles.paginationButton, !hasNext && styles.paginationButtonDisabled]}
+                    onPress={handleNext}
+                    disabled={!hasNext}
+                >
+                    <Text style={styles.paginationButtonText}>Вперед</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -53,12 +87,12 @@ export default function TeamsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
     },
     center: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 48
     },
     item: {
         flexDirection: 'row',
@@ -83,5 +117,27 @@ const styles = StyleSheet.create({
         marginRight: 16,
         borderRadius: 24,
     },
-    name: {}
+    pagination: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        backgroundColor: '#fff',
+    },
+    paginationButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: '#1f7aec',
+        borderRadius: 6,
+    },
+    paginationButtonDisabled: {
+        backgroundColor: '#ccc',
+    },
+    paginationButtonText: {
+        color: '#fff',
+    },
+    pageInfo: {
+        fontSize: 14,
+        color: '#666',
+    },
 });

@@ -9,12 +9,20 @@ type TeamsState = {
     items: Team[];
     loading: boolean;
     error?: string | null;
+    offset: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
 };
 
 const initialState: TeamsState = {
     items: [],
     loading: false,
     error: null,
+    offset: 0,
+    limit: PAGE_SIZE,
+    hasNext: true,
+    hasPrev: false,
 };
 
 const slice = createSlice({
@@ -27,10 +35,13 @@ const slice = createSlice({
         },
         fetchSuccess(
             state: TeamsState,
-            action: PayloadAction<{ items: Team[] }>
+            action: PayloadAction<{ items: Team[]; offset: number }>
         ) {
             state.loading = false;
             state.items = action.payload.items;
+            state.offset = action.payload.offset;
+            state.hasNext = action.payload.items.length === state.limit;
+            state.hasPrev = action.payload.offset > 0;
         },
         fetchFailure(state: TeamsState, action: PayloadAction<string>) {
             state.loading = false;
@@ -43,15 +54,17 @@ export const { fetchStart, fetchSuccess, fetchFailure } = slice.actions;
 
 export default slice.reducer;
 
-export const loadTeams = () => async (dispatch: AppDispatch) => {
+export const loadTeams = (newOffset?: number) => async (dispatch: AppDispatch) => {
     try {
+        const offset = newOffset ?? 0;
         dispatch(fetchStart());
-        const data = await fetchTeams({ limit: PAGE_SIZE, offset: 0 });
+        const data = await fetchTeams({ limit: PAGE_SIZE, offset });
         dispatch(fetchSuccess({
-            items: data.teams
+            items: data.teams,
+            offset
         }));
     } catch (e: any) {
         console.error('Ошибка загрузки команд: ', e);
-        dispatch(fetchFailure(e?.message ?? 'Не удалось загрузить команд'));
+        dispatch(fetchFailure(e?.message ?? 'Не удалось загрузить команды'));
     }
 };
