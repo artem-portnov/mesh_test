@@ -1,18 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
     FlatList,
     StyleSheet,
     View,
-    Text,
-    Image,
-    TouchableOpacity
+    ListRenderItem,
+    RefreshControl
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation';
+import { EmptyState, ErrorDisplay, LoadingSpinner, Pagination, TeamCard } from '../components';
 import { AppDispatch, RootState } from '../store';
 import { loadTeams } from '../store/slices/teamsSlice.ts';
+import { Team } from '../types';
 
 type TeamsNavigationProp = StackNavigationProp<RootStackParamList, 'Teams'>;
 
@@ -25,76 +26,77 @@ export default function TeamsScreen() {
         dispatch(loadTeams(offset));
     }, [dispatch, offset]);
 
-    const handleTeamPress = (teamId: number, teamName: string) => {
+    const handleRetry = useCallback(() => {
+        dispatch(loadTeams(offset));
+    }, [dispatch, offset]);
+
+    const handleRefresh = useCallback(() => {
+        dispatch(loadTeams(offset));
+    }, [dispatch, offset]);
+
+    const handleTeamPress = useCallback((team: Team) => {
         navigation.navigate('TeamDetails', {
-            teamId,
-            teamName
+            teamId: team.id,
+            teamName: team.name
         });
-    };
-    const handleNext = () => {
+    }, [navigation]);
+
+    const handleNext = useCallback(() => {
         if (hasNext) {
             dispatch(loadTeams(offset + limit));
         }
-    };
+    }, [dispatch, hasNext, offset, limit]);
 
-    const handlePrev = () => {
+    const handlePrev = useCallback(() => {
         if (hasPrev) {
             dispatch(loadTeams(offset - limit));
         }
-    };
+    }, [dispatch, hasPrev, offset, limit]);
+
+    const renderItem: ListRenderItem<Team> = ({item}) => (
+        <TeamCard
+            team={item}
+            onPress={handleTeamPress}
+        />
+    );
 
     if (loading) {
-        return (
-            <View style={styles.center}>
-                <Text>Загрузка...</Text>
-            </View>
-        );
+        return <LoadingSpinner text='Загрузка списка команд...'/>
     }
 
     if (error) {
-        return (
-            <View style={styles.center}>
-                <Text>Ошибка: {error}</Text>
-            </View>
-        );
+        return <ErrorDisplay error={error} onRetry={handleRetry}/>
     }
 
     return (
         <View style={styles.container}>
             <FlatList
                 data={items}
-                renderItem={({item}) => (
-                    <TouchableOpacity
-                        style={styles.item}
-                        onPress={() => handleTeamPress(item.id, item.name)}
-                    >
-                        <Image source={{uri: item.crest}} style={styles.logo} resizeMode="contain"/>
-                        <Text>{item.name}</Text>
-                    </TouchableOpacity>
-                )}
+                renderItem={renderItem}
                 keyExtractor={(item) => item.id.toString()}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading && items.length > 0}
+                        onRefresh={handleRefresh}
+                        colors={['#1f7aec']}
+                        tintColor='#1f7aec'
+                    />
+                }
+                ListEmptyComponent={
+                    <EmptyState
+                        title='Список команд пуст'
+                        actionText='Обновить'
+                        onAction={handleRefresh}
+                    />
+                }
             />
-            <View style={styles.pagination}>
-                <TouchableOpacity
-                    style={[styles.paginationButton, !hasPrev && styles.paginationButtonDisabled]}
-                    onPress={handlePrev}
-                    disabled={!hasPrev}
-                >
-                    <Text style={styles.paginationButtonText}>Назад</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.pageInfo}>
-                    Страница {Math.floor(offset / limit) + 1}
-                </Text>
-
-                <TouchableOpacity
-                    style={[styles.paginationButton, !hasNext && styles.paginationButtonDisabled]}
-                    onPress={handleNext}
-                    disabled={!hasNext}
-                >
-                    <Text style={styles.paginationButtonText}>Вперед</Text>
-                </TouchableOpacity>
-            </View>
+            <Pagination
+                currentPage={Math.floor(offset / limit) + 1}
+                hasNext={hasNext}
+                hasPrev={hasPrev}
+                handlePrev={handlePrev}
+                handleNext={handleNext}
+            />
         </View>
     );
 }
@@ -102,57 +104,5 @@ export default function TeamsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    center: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 48
-    },
-    item: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#fff',
-        marginHorizontal: 16,
-        marginVertical: 4,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    logo: {
-        width: 48,
-        height: 48,
-        marginRight: 16,
-        borderRadius: 24,
-    },
-    pagination: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#fff',
-    },
-    paginationButton: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        backgroundColor: '#1f7aec',
-        borderRadius: 6,
-    },
-    paginationButtonDisabled: {
-        backgroundColor: '#ccc',
-    },
-    paginationButtonText: {
-        color: '#fff',
-    },
-    pageInfo: {
-        fontSize: 14,
-        color: '#666',
-    },
+    }
 });

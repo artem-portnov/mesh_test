@@ -16,7 +16,7 @@ export default function RootNavigator() {
         <NavigationContainer>
             <Stack.Navigator>
                 <Stack.Screen
-                    name="Teams"
+                    name='Teams'
                     component={TeamsScreen}
                     options={{
                         title: 'Команды',
@@ -24,7 +24,7 @@ export default function RootNavigator() {
                     }}
                 />
                 <Stack.Screen
-                    name="TeamDetails"
+                    name='TeamDetails'
                     component={TeamDetailsScreen}
                     options={({route}) => ({
                         title: route.params.teamName,
