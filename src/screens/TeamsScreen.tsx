@@ -8,17 +8,29 @@ import {
     TouchableOpacity
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation';
 import { AppDispatch, RootState } from '../store';
 import { loadTeams } from '../store/slices/teamsSlice.ts';
+
+type TeamsNavigationProp = StackNavigationProp<RootStackParamList, 'Teams'>;
 
 export default function TeamsScreen() {
     const dispatch = useDispatch<AppDispatch>();
     const {items, loading, error, offset, limit, hasNext, hasPrev} = useSelector((state: RootState) => state.teams);
+    const navigation = useNavigation<TeamsNavigationProp>();
 
     useEffect(() => {
         dispatch(loadTeams(offset));
     }, [dispatch, offset]);
 
+    const handleTeamPress = (teamId: number, teamName: string) => {
+        navigation.navigate('TeamDetails', {
+            teamId,
+            teamName
+        });
+    };
     const handleNext = () => {
         if (hasNext) {
             dispatch(loadTeams(offset + limit));
@@ -52,10 +64,13 @@ export default function TeamsScreen() {
             <FlatList
                 data={items}
                 renderItem={({item}) => (
-                    <View style={styles.item}>
+                    <TouchableOpacity
+                        style={styles.item}
+                        onPress={() => handleTeamPress(item.id, item.name)}
+                    >
                         <Image source={{uri: item.crest}} style={styles.logo} resizeMode="contain"/>
                         <Text>{item.name}</Text>
-                    </View>
+                    </TouchableOpacity>
                 )}
                 keyExtractor={(item) => item.id.toString()}
             />

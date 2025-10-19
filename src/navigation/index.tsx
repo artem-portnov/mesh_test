@@ -6,7 +6,7 @@ import TeamDetailsScreen from '../screens/TeamDetailsScreen';
 
 export type RootStackParamList = {
     Teams: undefined;
-    TeamDetails: undefined;
+    TeamDetails: { teamId: number; teamName: string };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -26,10 +26,11 @@ export default function RootNavigator() {
                 <Stack.Screen
                     name="TeamDetails"
                     component={TeamDetailsScreen}
-                    options={{
-                        title: 'Команда',
+                    options={({route}) => ({
+                        title: route.params.teamName,
+                        headerBackTitle: 'Назад',
                         headerTitleAlign: 'center'
-                    }}
+                    })}
                 />
             </Stack.Navigator>
         </NavigationContainer>
